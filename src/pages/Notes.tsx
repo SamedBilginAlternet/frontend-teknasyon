@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import { NotesSection } from '@/components/NotesSection';
+import { PromptImprover } from '@/components/PromptImprover';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -22,6 +23,16 @@ const Notes = () => {
       content: text,
       timestamp: new Date(),
       isVoiceNote: true,
+    };
+    setNotes([note, ...notes]);
+  };
+
+  const handleImprovedPrompt = (improvedText: string) => {
+    const note: Note = {
+      id: Date.now().toString(),
+      content: improvedText,
+      timestamp: new Date(),
+      isVoiceNote: false,
     };
     setNotes([note, ...notes]);
   };
@@ -54,9 +65,12 @@ const Notes = () => {
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <div>
               <VoiceRecorder onTranscription={handleVoiceTranscription} />
+            </div>
+            <div>
+              <PromptImprover onImprovedPrompt={handleImprovedPrompt} />
             </div>
             <div>
               <NotesSection 

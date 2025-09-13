@@ -24,6 +24,7 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 }
 import Todos from "./pages/Todos";
 import Notes from "./pages/Notes";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,9 +39,10 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
-            <Route path="/todos" element={<RequireAuth><Todos /></RequireAuth>} />
-            <Route path="/notes" element={<RequireAuth><Notes /></RequireAuth>} />
+            <Route path="/" element={<Index />} />
+            <Route path="/todos" element={<Todos />} />
+            <Route path="/notes" element={<Notes />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

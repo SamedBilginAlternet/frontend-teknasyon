@@ -3,8 +3,15 @@ import api from '@/lib/axios';
 import axios from 'axios';
 
 interface AuthState {
-  user: null | { email: string; nickname?: string; avatarUrl?: string };
+  user: null | { 
+    email: string; 
+    nickname: string; 
+    avatarUrl: string;
+    avatarBase64?: string;
+    avatarMimeType?: string;
+  };
   token: string | null;
+  refreshToken: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -12,6 +19,7 @@ interface AuthState {
 const initialState: AuthState = {
   user: null,
   token: null,
+  refreshToken: null,
   loading: false,
   error: null,
 };
@@ -58,6 +66,7 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null;
       state.token = null;
+      state.refreshToken = null;
       state.error = null;
     },
   },
@@ -69,15 +78,22 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
-        // API returns { accessToken, email, nickname, avatarUrl }
+        // API returns { accessToken, refreshToken, email, nickname, avatarUrl, avatarBase64, avatarMimeType }
+        const fullAvatarUrl = action.payload.avatarUrl 
+          ? `http://192.168.20.43:8083${action.payload.avatarUrl}`
+          : '';
+        
         state.user = action.payload.email
           ? {
               email: action.payload.email,
-              nickname: action.payload.nickname,
-              avatarUrl: action.payload.avatarUrl,
+              nickname: action.payload.nickname || '',
+              avatarUrl: fullAvatarUrl,
+              avatarBase64: action.payload.avatarBase64,
+              avatarMimeType: action.payload.avatarMimeType,
             }
           : null;
         state.token = action.payload.accessToken || null;
+        state.refreshToken = action.payload.refreshToken || null;
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
@@ -89,15 +105,22 @@ const authSlice = createSlice({
       })
         .addCase(login.fulfilled, (state, action) => {
           state.loading = false;
-          // API returns { accessToken, email, nickname, avatarUrl }
+          // API returns { accessToken, refreshToken, email, nickname, avatarUrl, avatarBase64, avatarMimeType }
+          const fullAvatarUrl = action.payload.avatarUrl 
+            ? `http://192.168.20.43:8083${action.payload.avatarUrl}`
+            : '';
+          
           state.user = action.payload.email
             ? {
                 email: action.payload.email,
-                nickname: action.payload.nickname,
-                avatarUrl: action.payload.avatarUrl,
+                nickname: action.payload.nickname || '',
+                avatarUrl: fullAvatarUrl,
+                avatarBase64: action.payload.avatarBase64,
+                avatarMimeType: action.payload.avatarMimeType,
               }
             : null;
           state.token = action.payload.accessToken || null;
+          state.refreshToken = action.payload.refreshToken || null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
