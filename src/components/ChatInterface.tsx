@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { improvePrompt } from '@/store/promptSlice';
+import { actPrompt } from '@/store/promptActSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -12,6 +13,13 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  type?: string;
+  tasks?: Array<{
+    id: number;
+    description: string;
+    startDate: string;
+    endDate: string;
+  }>;
 }
 
 import axios from 'axios';
@@ -27,6 +35,8 @@ export const ChatInterface = () => {
       timestamp: new Date(),
     },
   ]);
+  const promptAct = useAppSelector(state => state.promptAct);
+  // promptAct artık store'da, ama burada kullanılmıyor
   const [inputText, setInputText] = useState('');
   const dispatch = useAppDispatch();
   const [improveTargetId, setImproveTargetId] = useState<string | null>(null);
@@ -56,7 +66,7 @@ export const ChatInterface = () => {
     }
   };
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     const userMessage: Message = {
@@ -68,16 +78,31 @@ export const ChatInterface = () => {
 
     setMessages(prev => [...prev, userMessage]);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: `"${text}" ile ilgili size yardımcı olabilirim. Bu konuda ne yapmak istiyorsunuz?`,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    // /prompt/act API çağrısı
+    try {
+      const result = await dispatch(actPrompt({ prompt: text })).unwrap();
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (result.id !== null && result.id !== undefined) ? result.id.toString() : Date.now().toString(),
+          text: result.message,
+          isUser: false,
+          timestamp: new Date(),
+          type: result.type,
+          tasks: result.tasks || undefined,
+        }
+      ]);
+    } catch (e) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: 'AI yanıtı alınamadı.',
+          isUser: false,
+          timestamp: new Date(),
+        }
+      ]);
+    }
 
     setInputText('');
   };
@@ -162,7 +187,14 @@ export const ChatInterface = () => {
                             <span className="text-lg font-semibold">S</span>
                           )
                         ) : (
-                          <span className="text-lg font-bold">AI</span>
+                          // AI mesajı ise type'a göre ikon ve renk
+                          message.type === 'NOTE_CREATED' ? (
+                            <span className="text-lg font-bold text-accent-gold">📝</span>
+                          ) : message.type === 'TASK_CREATED' ? (
+                            <span className="text-lg font-bold text-accent-gold">✅</span>
+                          ) : (
+                            <span className="text-lg font-bold">AI</span>
+                          )
                         )}
                       </div>
                     </div>
@@ -176,7 +208,29 @@ export const ChatInterface = () => {
                             : 'bg-navy-light/10 text-navy-light border border-navy-primary/20 rounded-bl-md backdrop-blur-sm'
                         }`}
                       >
+                        {/* AI mesajı ise type'ı göster */}
+                        {!message.isUser && message.type && (
+                          <div className="mb-1 text-xs font-bold text-accent-gold flex items-center gap-1">
+                            {message.type === 'NOTE_CREATED' && <span>📝 Not oluşturuldu</span>}
+                            {message.type === 'TASK_CREATED' && <span>✅ Görev oluşturuldu</span>}
+                            {message.type === 'CHAT' && <span>💬 Sohbet</span>}
+                          </div>
+                        )}
+                             
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                        {/* TASKS_LISTED ise görevleri kart şeklinde göster */}
+                        {!message.isUser && message.type === 'TASKS_LISTED' && message.tasks && message.tasks.length > 0 && (
+                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {message.tasks.map(task => (
+                              <Card key={task.id} className="p-3 border border-accent-gold/40 bg-navy-light/10">
+                                <div className="font-bold text-accent-gold mb-1">Görev #{task.id}</div>
+                                <div className="text-navy-light mb-1">{task.description}</div>
+                                <div className="text-xs text-navy-light/60">Başlangıç: {new Date(task.startDate).toLocaleString()}</div>
+                                <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
                         {/* Düzeltilmiş öneri mesajı */}
                         {message.isUser && improvedMap[message.id] && (
                           <div className="mt-2 flex items-center justify-end gap-2">
@@ -230,7 +284,7 @@ export const ChatInterface = () => {
                             try {
                               const res = await dispatch(improvePrompt({ prompt: inputText })).unwrap();
                               setImprovedMap(prev => ({ ...prev, input: res.improved }));
-                            } catch (e) {}
+                            } catch (e) { /* empty */ }
                             setImproveTargetId(null);
                           }
                         }}
