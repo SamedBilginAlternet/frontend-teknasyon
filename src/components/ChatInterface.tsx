@@ -266,34 +266,56 @@ export const ChatInterface = () => {
                     />
                   </div>
                   <div className="flex gap-2 items-center">
+                    {/* Promptu İyileştir butonu ve öneri solda */}
+                    <div className="flex flex-col items-start justify-center mr-2">
+                      {!improvedMap['input'] && (
+                        <button
+                          className={`bg-white border border-navy-primary/20 rounded-full p-1 shadow transition hover:bg-accent-gold/80 mb-1`}
+                          title="Promptu İyileştir"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            if (inputText.trim()) {
+                              setImproveTargetId('input');
+                              try {
+                                const res = await dispatch(improvePrompt({ prompt: inputText })).unwrap();
+                                setImprovedMap(prev => ({ ...prev, input: res.improved }));
+                              } catch (e) { /* empty */ }
+                              setImproveTargetId(null);
+                            }
+                          }}
+                          disabled={improveTargetId === 'input' || !inputText.trim()}
+                          style={{zIndex:2}}
+                        >
+                          <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 15V5m0 0l-5 5m5-5l5 5" stroke="#1a2236" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      )}
+                      {improvedMap['input'] && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-accent-gold/20 px-2 py-1 rounded text-navy-dark font-semibold animate-blink">
+                            {improvedMap['input']}
+                          </span>
+                          <button
+                            className="bg-accent-gold border border-navy-primary/20 rounded-full p-1 shadow flex items-center justify-center"
+                            title="Düzeltilmiş promptu değiştir ve gönder"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              setInputText(improvedMap['input']);
+                              await sendMessage(improvedMap['input']);
+                              setImprovedMap(prev => ({ ...prev, input: undefined }));
+                            }}
+                            style={{zIndex:2}}
+                          >
+                            <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-8" stroke="#1a2236" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <SpeechInput
                       currentText={inputText}
                       onResult={(text) => {
                         setInputText(text);
                       }}
                     />
-                    {/* Promptu İyileştir butonu input için */}
-                    {!improvedMap['input'] && (
-                      <button
-                        className={`bg-white border border-navy-primary/20 rounded-full p-1 shadow transition hover:bg-accent-gold/80`}
-                        title="Promptu İyileştir"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          if (inputText.trim()) {
-                            setImproveTargetId('input');
-                            try {
-                              const res = await dispatch(improvePrompt({ prompt: inputText })).unwrap();
-                              setImprovedMap(prev => ({ ...prev, input: res.improved }));
-                            } catch (e) { /* empty */ }
-                            setImproveTargetId(null);
-                          }
-                        }}
-                        disabled={improveTargetId === 'input' || !inputText.trim()}
-                        style={{zIndex:2}}
-                      >
-                        <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 15V5m0 0l-5 5m5-5l5 5" stroke="#1a2236" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </button>
-                    )}
                     <Button 
                       type="submit" 
                       size="icon" 
@@ -303,27 +325,6 @@ export const ChatInterface = () => {
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  {/* İyileştirilmiş öneri input kutusunun altında gösteriliyor */}
-                  {improvedMap['input'] && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs bg-accent-gold/20 px-2 py-1 rounded text-navy-dark font-semibold animate-blink">
-                        {improvedMap['input']}
-                      </span>
-                      <button
-                        className="bg-accent-gold border border-navy-primary/20 rounded-full p-1 shadow flex items-center justify-center"
-                        title="Düzeltilmiş promptu değiştir ve gönder"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          setInputText(improvedMap['input']);
-                          await sendMessage(improvedMap['input']);
-                          setImprovedMap(prev => ({ ...prev, input: undefined }));
-                        }}
-                        style={{zIndex:2}}
-                      >
-                        <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-8" stroke="#1a2236" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </form>
             </div>
