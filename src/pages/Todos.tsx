@@ -1,52 +1,43 @@
 import React from 'react';
-import { TodoTimer } from '@/components/TodoTimer';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CheckCircle, Circle } from 'lucide-react';
+import { ChatInterface } from '@/components/ChatInterface';
+import Layout from '@/components/Layout';
+
+const todos = [
+  { id: 1, title: 'Sunum hazırla', done: false },
+  { id: 2, title: 'Toplantı notlarını gözden geçir', done: true },
+  { id: 3, title: 'Yeni görev ekle', done: false },
+  { id: 4, title: 'Raporu gönder', done: true },
+];
 
 const Todos = () => {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-gradient-shadow border-b border-navy-primary/20 p-6">
-        <div className="container mx-auto flex items-center gap-4">
-          <Link to="/">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-navy-light">Akıllı Görevler</h1>
-            <p className="text-muted-foreground">Görevlerinizi yönetin ve zamanınızı takip edin</p>
-          </div>
-        </div>
+    <Layout title="Akıllı Görevler" subtitle="Görevlerinizi yönetin ve zamanınızı takip edin">
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center">
+        <Card className="w-full max-w-2xl p-8 rounded-3xl shadow-xl bg-gradient-to-br from-navy-medium/60 to-navy-dark/40 border-navy-primary/30">
+          <h2 className="text-2xl font-bold text-navy-light mb-6">Bugünkü Görevler</h2>
+          <ul className="space-y-4">
+            {todos.map(todo => (
+              <li key={todo.id} className="flex items-center gap-4 p-4 rounded-xl bg-navy-light/10 border border-navy-primary/20 hover:bg-navy-light/20 transition-all">
+                <span>
+                  {todo.done ? (
+                    <CheckCircle className="text-accent-gold w-6 h-6" />
+                  ) : (
+                    <Circle className="text-navy-primary w-6 h-6" />
+                  )}
+                </span>
+                <span className={`flex-1 text-lg font-medium ${todo.done ? 'line-through text-navy-light/60' : 'text-navy-light'}`}>{todo.title}</span>
+                <button className="px-3 py-1 rounded-full bg-navy-primary/10 text-navy-light text-sm hover:bg-navy-primary/30 transition">Düzenle</button>
+              </li>
+            ))}
+          </ul>
+        </Card>
       </div>
-
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <TodoTimer />
-          
-          {/* Additional Todo Features */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="p-6 bg-gradient-shadow border-navy-primary/20">
-              <h3 className="text-xl font-semibold text-navy-light mb-4">Haftalık Hedefler</h3>
-              <p className="text-muted-foreground">
-                Uzun vadeli hedeflerinizi belirleyin ve haftalık olarak takip edin.
-              </p>
-            </Card>
-            
-            <Card className="p-6 bg-gradient-shadow border-navy-primary/20">
-              <h3 className="text-xl font-semibold text-navy-light mb-4">Performans Analizi</h3>
-              <p className="text-muted-foreground">
-                Tamamlanan görevlerinizi analiz edin ve verimliliğinizi artırın.
-              </p>
-            </Card>
-          </div>
-        </div>
+      <div className="fixed bottom-0 left-0 w-full z-50">
+        <ChatInterface />
       </div>
-    </div>
+    </Layout>
   );
 };
 

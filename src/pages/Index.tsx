@@ -4,10 +4,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/authSlice';
 import { DailySummary } from '@/components/DailySummary';
 import { ChatInterface } from '@/components/ChatInterface';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { CheckSquare, FileText, Brain, BarChart3, User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, Settings, CheckSquare, FileText } from 'lucide-react';
 import throneHero from '@/assets/throne-hero.jpg';
 import dragonIcon from '@/assets/dragon-icon.png';
 
@@ -56,42 +54,62 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with Profile */}
-      <div className="absolute top-4 right-4 z-50">
+      {/* Header with Navigation */}
+      <div className="absolute top-4 left-4 right-4 z-50">
         {token && user ? (
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowProfileDropdown(!showProfileDropdown);
-              }}
-              className="flex items-center gap-3 p-3 rounded-xl bg-navy-dark/90 border border-navy-primary/30 hover:bg-navy-medium/60 transition-all duration-200 shadow-lg backdrop-blur-sm"
-            >
-              {getAvatarUrl() ? (
-                <div className="relative">
-                  <img
-                    src={getAvatarUrl()!}
-                    alt="Profile"
-                    className="w-12 h-12 rounded-full object-cover border-2 border-accent-gold/40 shadow-md ring-2 ring-navy-primary/20"
-                    onError={(e) => {
-                      // Fallback to user icon if avatar fails to load
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-navy-dark"></div>
+          <div className="flex items-center justify-between">
+            {/* Navigation Links */}
+            <div className="flex items-center gap-6 bg-navy-dark/90 border border-navy-primary/30 rounded-xl px-6 py-3 backdrop-blur-sm shadow-lg">
+              <button
+                onClick={() => navigate('/todos')}
+                className="flex items-center gap-2 text-navy-light hover:text-accent-gold transition-colors duration-200"
+              >
+                <CheckSquare className="w-4 h-4" />
+                <span className="text-sm font-medium">Görevler</span>
+              </button>
+              <button
+                onClick={() => navigate('/notes')}
+                className="flex items-center gap-2 text-navy-light hover:text-accent-gold transition-colors duration-200"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="text-sm font-medium">Notlar</span>
+              </button>
+            </div>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowProfileDropdown(!showProfileDropdown);
+                }}
+                className="flex items-center gap-3 p-3 rounded-xl bg-navy-dark/90 border border-navy-primary/30 hover:bg-navy-medium/60 transition-all duration-200 shadow-lg backdrop-blur-sm"
+              >
+                {getAvatarUrl() ? (
+                  <div className="relative">
+                    <img
+                      src={getAvatarUrl()!}
+                      alt="Profile"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-accent-gold/40 shadow-md ring-2 ring-navy-primary/20"
+                      onError={(e) => {
+                        // Fallback to user icon if avatar fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-navy-dark"></div>
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-navy-primary/20 border-2 border-accent-gold/40 flex items-center justify-center">
+                    <User className="w-6 h-6 text-navy-light" />
+                  </div>
+                )}
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-semibold text-navy-light">{user.nickname}</span>
+                  <span className="text-xs text-navy-light/60">Online</span>
                 </div>
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-navy-primary/20 border-2 border-accent-gold/40 flex items-center justify-center">
-                  <User className="w-6 h-6 text-navy-light" />
-                </div>
-              )}
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-semibold text-navy-light">{user.nickname}</span>
-                <span className="text-xs text-navy-light/60">Online</span>
-              </div>
-            </button>
+              </button>
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
@@ -143,20 +161,23 @@ const Index = () => {
                 </div>
               </div>
             )}
+            </div>
           </div>
         ) : (
-          <Button
-            variant="default"
-            size="sm"
-            className="bg-navy-primary text-navy-dark"
-            onClick={() => navigate('/login')}
-          >
-            Giriş Yap
-          </Button>
+          <div className="flex justify-end">
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-navy-primary text-navy-dark"
+              onClick={() => navigate('/login')}
+            >
+              Giriş Yap
+            </Button>
+          </div>
         )}
       </div>
       {/* Hero Section */}
-      <div className="relative h-64 overflow-hidden flex items-center justify-center">
+      <div className="relative h-30 overflow-hidden flex items-center justify-center">
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -166,22 +187,22 @@ const Index = () => {
         />
 
         {/* Content */}
-        <div className="relative z-10 text-center space-y-4">
+        <div className="relative z-10 text-center space-y-2">
           <div className="flex items-center justify-center gap-3">
-            <img src={dragonIcon} alt="Dragon" className="h-12 w-12" />
-            <h1 className="text-5xl font-bold text-accent-gold">ThroneMind</h1>
+            <img src={dragonIcon} alt="Dragon" className="h-10 w-10" />
+            <h1 className="text-4xl font-bold text-accent-gold">ThroneMind</h1>
           </div>
           {user?.nickname ? (
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold text-navy-light">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-navy-light">
                 Hoşgeldin {user.nickname}!
               </h2>
-              <p className="text-lg text-navy-light/80 max-w-2xl">
+              <p className="text-base text-navy-light/80 max-w-2xl">
                 AI ile verimliliğinizi artırın. Sesli notlar, akıllı görevler ve günlük özetler.
               </p>
             </div>
           ) : (
-            <p className="text-xl text-navy-light max-w-2xl">
+            <p className="text-lg text-navy-light max-w-2xl">
               AI ile verimliliğinizi artırın. Sesli notlar, akıllı görevler ve günlük özetler.
             </p>
           )}
@@ -189,67 +210,13 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-4 pb-24">
         {/* Daily Summary */}
         <DailySummary notes={notes.map(n => n.content)} />
-
-        {/* Chat Interface */}
-        <ChatInterface />
-
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Link to="/todos">
-            <Card className="p-6 bg-gradient-shadow border-navy-primary/20 hover:bg-navy-medium/50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3 mb-3">
-                <CheckSquare className="h-8 w-8 text-navy-primary" />
-                <h3 className="text-lg font-semibold text-navy-light">Akıllı Görevler</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Görevlerinizi yönetin ve zamanınızı takip edin
-              </p>
-            </Card>
-          </Link>
-
-          <Link to="/notes">
-            <Card className="p-6 bg-gradient-shadow border-navy-primary/20 hover:bg-navy-medium/50 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3 mb-3">
-                <FileText className="h-8 w-8 text-navy-primary" />
-                <h3 className="text-lg font-semibold text-navy-light">Notlar</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Sesli ve yazılı notlarınızı organize edin
-              </p>
-            </Card>
-          </Link>
-
-          <Card className="p-6 bg-gradient-shadow border-navy-primary/20 hover:bg-navy-medium/50 transition-colors cursor-pointer">
-            <div className="flex items-center gap-3 mb-3">
-              <Brain className="h-8 w-8 text-navy-primary" />
-              <h3 className="text-lg font-semibold text-navy-light">AI Analiz</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Verimliliğinizi analiz edin ve öneriler alın
-            </p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-shadow border-navy-primary/20 hover:bg-navy-medium/50 transition-colors cursor-pointer">
-            <div className="flex items-center gap-3 mb-3">
-              <BarChart3 className="h-8 w-8 text-navy-primary" />
-              <h3 className="text-lg font-semibold text-navy-light">Raporlar</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Günlük, haftalık ve aylık performans raporları
-            </p>
-          </Card>
-        </div>
-
-        {/* Footer */}
-        <Card className="p-6 bg-gradient-shadow border-accent-gold/20 text-center">
-          <p className="text-sm text-muted-foreground">
-            "Akıl kitaplara ihtiyaç duyar, tıpkı kılıcın bileme taşına ihtiyaç duyduğu gibi." - Tyrion Lannister
-          </p>
-        </Card>
       </div>
+
+      {/* Chat Interface - Fixed at bottom */}
+      <ChatInterface />
     </div>
   );
 };

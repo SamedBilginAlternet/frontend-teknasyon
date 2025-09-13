@@ -16,13 +16,34 @@ interface AuthState {
   error: string | null;
 }
 
-const initialState: AuthState = {
-  user: null,
-  token: null,
-  refreshToken: null,
-  loading: false,
-  error: null,
+// Load initial state from localStorage
+const loadAuthFromStorage = () => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+    const userString = localStorage.getItem('user');
+    const user = userString ? JSON.parse(userString) : null;
+    
+    return {
+      user,
+      token,
+      refreshToken,
+      loading: false,
+      error: null,
+    };
+  } catch (error) {
+    console.error('Error loading auth from localStorage:', error);
+    return {
+      user: null,
+      token: null,
+      refreshToken: null,
+      loading: false,
+      error: null,
+    };
+  }
 };
+
+const initialState: AuthState = loadAuthFromStorage();
 
 export const register = createAsyncThunk(
   'auth/register',
@@ -68,6 +89,10 @@ const authSlice = createSlice({
       state.token = null;
       state.refreshToken = null;
       state.error = null;
+      // Clear localStorage
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
     },
   },
   extraReducers: (builder) => {
@@ -94,6 +119,17 @@ const authSlice = createSlice({
           : null;
         state.token = action.payload.accessToken || null;
         state.refreshToken = action.payload.refreshToken || null;
+        
+        // Save to localStorage
+        if (action.payload.accessToken) {
+          localStorage.setItem('accessToken', action.payload.accessToken);
+        }
+        if (action.payload.refreshToken) {
+          localStorage.setItem('refreshToken', action.payload.refreshToken);
+        }
+        if (state.user) {
+          localStorage.setItem('user', JSON.stringify(state.user));
+        }
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
@@ -121,6 +157,17 @@ const authSlice = createSlice({
             : null;
           state.token = action.payload.accessToken || null;
           state.refreshToken = action.payload.refreshToken || null;
+          
+          // Save to localStorage
+          if (action.payload.accessToken) {
+            localStorage.setItem('accessToken', action.payload.accessToken);
+          }
+          if (action.payload.refreshToken) {
+            localStorage.setItem('refreshToken', action.payload.refreshToken);
+          }
+          if (state.user) {
+            localStorage.setItem('user', JSON.stringify(state.user));
+          }
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
