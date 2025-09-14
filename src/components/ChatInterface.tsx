@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { improvePrompt } from '@/store/promptSlice';
 import { actPrompt } from '@/store/promptActSlice';
+import { optimizeTask } from '@/store/optimizeTaskSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -42,6 +43,8 @@ export const ChatInterface = () => {
   const [improveTargetId, setImproveTargetId] = useState<string | null>(null);
   const [improvedMap, setImprovedMap] = useState<{[id: string]: string}>({});
   const [approvedId, setApprovedId] = useState<string | null>(null);
+  const [optimizing, setOptimizing] = useState(false);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
 
   // Mesajı iyileştir (Copilot arrow)
   const handleImproveMessage = async (id: string, text: string) => {
@@ -113,6 +116,31 @@ export const ChatInterface = () => {
     if (inputText.trim()) {
       setIsFullscreen(true);
     }
+  };
+
+  const optimizeTaskState = useAppSelector(state => state.optimizeTask);
+
+  const handleOptimizeTasks = async (taskIds: number[]) => {
+    setOptimizing(true);
+    setOptimizeError(null);
+    try {
+      const result = await dispatch(optimizeTask({ taskIds })).unwrap();
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          text: result.message,
+          isUser: false,
+          timestamp: new Date(),
+          type: 'OPTIMIZE_RESULT',
+          tasks: result.newTask ? [result.newTask] : undefined,
+        }
+      ]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setOptimizeError(typeof err === 'string' ? err : 'Optimize işlemi başarısız');
+    }
+    setOptimizing(false);
   };
 
   return (
@@ -224,6 +252,48 @@ export const ChatInterface = () => {
                             {message.tasks.map(task => (
                               <Card key={task.id} className="p-3 border border-accent-gold/40 bg-navy-light/10">
                                 <div className="font-bold text-accent-gold mb-1">Görev #{task.id}</div>
+                                <div className="text-navy-light mb-1">{task.description}</div>
+                                <div className="text-xs text-navy-light/60">Başlangıç: {new Date(task.startDate).toLocaleString()}</div>
+                                <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                        {/* DUBLICATE_TASK türündeyse çift görevleri ve optimize sonucu yeni görevi göster */}
+                        {!message.isUser && message.type === 'DUBLICATE_TASK' && message.tasks && message.tasks.length > 0 && (
+                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {message.tasks.map(task => (
+                              <Card key={task.id} className="p-3 border border-red-400 bg-navy-light/10">
+                                <div className="font-bold text-red-400 mb-1">Çift Görev #{task.id}</div>
+                                <div className="text-navy-light mb-1">{task.description}</div>
+                                <div className="text-xs text-navy-light/60">Başlangıç: {new Date(task.startDate).toLocaleString()}</div>
+                                <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>
+                              </Card>
+                            ))}
+                            {message.text === 'Do you want to remove these tasks with one?' && (
+                              <div className="mt-2 flex gap-2 items-center">
+                                <button
+                                  className="bg-accent-gold border border-navy-primary/20 rounded-full p-1 shadow flex items-center justify-center"
+                                  title="Onayla ve birleştir"
+                                  disabled={optimizing}
+                                  onClick={() => handleOptimizeTasks(message.tasks.map(t => t.id))}
+                                  style={{zIndex:2}}
+                                >
+                                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                                    <path d="M5 10l4 4 6-8" stroke="#1a2236" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                                {optimizeError && <span className="text-xs text-red-500">{optimizeError}</span>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* OPTIMIZE_RESULT tipinde yeni görev kartı göster */}
+                        {!message.isUser && message.type === 'OPTIMIZE_RESULT' && message.tasks && message.tasks.length > 0 && (
+                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {message.tasks.map(task => (
+                              <Card key={task.id} className="p-3 border border-green-400 bg-navy-light/10">
+                                <div className="font-bold text-green-400 mb-1">Yeni Birleştirilmiş Görev #{task.id}</div>
                                 <div className="text-navy-light mb-1">{task.description}</div>
                                 <div className="text-xs text-navy-light/60">Başlangıç: {new Date(task.startDate).toLocaleString()}</div>
                                 <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>

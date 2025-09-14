@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
 import promptReducer from './promptSlice';
 import promptActReducer from './promptActSlice';
+import optimizeTaskReducer from './optimizeTaskSlice';
 
 const store = configureStore({
   reducer: {
     auth: authReducer,
     prompts: promptReducer,
-      promptAct: promptActReducer,
+    promptAct: promptActReducer,
+    optimizeTask: optimizeTaskReducer,
 
   },
 });
