@@ -25,7 +25,7 @@ export const updateTaskStatus = createAsyncThunk(
   'taskStatus/updateTaskStatus',
   async ({ id, status }: UpdateTaskStatusPayload, { rejectWithValue }) => {
     try {
-      const response = await api.patch(`tasks/${id}/status`, { status });
+      const response = await api.put(`tasks/${id}/status`, { status });
       return response.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || 'Görev durumu güncellenemedi');

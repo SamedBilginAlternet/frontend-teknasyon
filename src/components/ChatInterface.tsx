@@ -1,13 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { improvePrompt } from '@/store/promptSlice';
 import { actPrompt } from '@/store/promptActSlice';
+import { actWithPhoto } from '@/store/actWithPhotoSlice';
 import { optimizeTask } from '@/store/optimizeTaskSlice';
 import { updateTaskStatus } from '@/store/updateTaskStatusSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Mic, Send, Square, X } from 'lucide-react';
+import { Mic, Send, Square, X, Image as ImageIcon } from 'lucide-react';
 import SpeechInput from '@/components/SpeechInput';
 
 interface Message {
@@ -28,10 +30,19 @@ import axios from 'axios';
 
 export const ChatInterface = () => {
   // Task status update
-  const updateTaskStatusState = useAppSelector(state => state.updateTaskStatus);
+  const [taskStatusMap, setTaskStatusMap] = useState<{[id: number]: 'idle' | 'loading' | 'success' | 'error'}>({});
+  const [taskStatusError, setTaskStatusError] = useState<{[id: number]: string | null}>({});
   const handleTaskStatusUpdate = async (taskId: number, status: 'DONE') => {
-    await dispatch(updateTaskStatus({ id: taskId, status }));
-    // Optionally, show feedback or update UI
+    setTaskStatusMap(prev => ({ ...prev, [taskId]: 'loading' }));
+    setTaskStatusError(prev => ({ ...prev, [taskId]: null }));
+    try {
+      await dispatch(updateTaskStatus({ id: taskId, status })).unwrap();
+      setTaskStatusMap(prev => ({ ...prev, [taskId]: 'success' }));
+    } catch (e: any) {
+      setTaskStatusMap(prev => ({ ...prev, [taskId]: 'error' }));
+      setTaskStatusError(prev => ({ ...prev, [taskId]: typeof e === 'string' ? e : 'Durum güncellenemedi' }));
+    }
+ 
   };
   const { user } = useAppSelector(state => state.auth);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -46,6 +57,8 @@ export const ChatInterface = () => {
   const promptAct = useAppSelector(state => state.promptAct);
   // promptAct artık store'da, ama burada kullanılmıyor
   const [inputText, setInputText] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const [improveTargetId, setImproveTargetId] = useState<string | null>(null);
   const [improvedMap, setImprovedMap] = useState<{[id: string]: string}>({});
@@ -77,7 +90,7 @@ export const ChatInterface = () => {
   };
 
   const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() && !selectedImage) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -90,18 +103,35 @@ export const ChatInterface = () => {
 
     // /prompt/act API çağrısı
     try {
-      const result = await dispatch(actPrompt({ prompt: text })).unwrap();
-      setMessages(prev => [
-        ...prev,
-        {
-          id: (result.id !== null && result.id !== undefined) ? result.id.toString() : Date.now().toString(),
-          text: result.message,
-          isUser: false,
-          timestamp: new Date(),
-          type: result.type,
-          tasks: result.tasks || undefined,
-        }
-      ]);
+      let result;
+      if (selectedImage) {
+        // Fotoğraf varsa yeni thunk ile gönder
+        const result = await dispatch(actWithPhoto(selectedImage)).unwrap();
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (result.id !== null && result.id !== undefined) ? result.id.toString() : Date.now().toString(),
+            text: result.message,
+            isUser: false,
+            timestamp: new Date(),
+            type: result.type || 'TASK_CREATED',
+            tasks: result.tasks || undefined,
+          }
+        ]);
+      } else {
+        const result = await dispatch(actPrompt({ prompt: text })).unwrap();
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (result.id !== null && result.id !== undefined) ? result.id.toString() : Date.now().toString(),
+            text: result.message,
+            isUser: false,
+            timestamp: new Date(),
+            type: result.type,
+            tasks: result.tasks || undefined,
+          }
+        ]);
+      }
     } catch (e) {
       setMessages(prev => [
         ...prev,
@@ -115,6 +145,7 @@ export const ChatInterface = () => {
     }
 
     setInputText('');
+    setSelectedImage(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -261,30 +292,46 @@ export const ChatInterface = () => {
                         {!message.isUser && message.type === 'TASKS_LISTED' && message.tasks && message.tasks.length > 0 && (
                           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                             {message.tasks.map(task => (
-                              <Card key={task.id} className="p-3 border border-accent-gold/40 bg-navy-light/10">
-                                <div className="font-bold text-accent-gold mb-1">Görev #{task.id}</div>
-                                <div className="text-navy-light mb-1">{task.description}</div>
-                                <div className="text-xs text-navy-light/60">Başlangıç: {new Date(task.startDate).toLocaleString()}</div>
-                                <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>
-                                <button
-                                  className="mt-2 px-3 py-1 rounded bg-accent-gold text-navy-dark font-semibold text-xs hover:bg-accent-gold/80 transition"
-                                  onClick={() => handleTaskStatusUpdate(task.id, 'DONE')}
-                                  disabled={updateTaskStatusState.loading}
-                                >
-                                  {updateTaskStatusState.loading ? 'Güncelleniyor...' : 'Tamamla'}
-                                </button>
-                                {updateTaskStatusState.error && (
-                                  <div className="text-xs text-red-500 mt-1">{updateTaskStatusState.error}</div>
-                                )}
-                                {updateTaskStatusState.success && (
-                                  <div className="text-xs text-green-500 mt-1">Durum: Tamamlandı!</div>
-                                )}
-                              </Card>
+                              'description' in task ? (
+                                <Card key={task.id} className="p-3 border border-accent-gold/40 bg-navy-light/10">
+                                  <div className="font-bold text-accent-gold mb-1">Görev #{task.id}</div>
+                                  <div className="text-navy-light mb-1">{task.description}</div>
+                                  <div className="text-xs text-navy-light/60">Başlangıç: {new Date(task.startDate).toLocaleString()}</div>
+                                  <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>
+                                  <button
+                                    className="mt-2 px-3 py-1 rounded bg-accent-gold text-navy-dark font-semibold text-xs hover:bg-accent-gold/80 transition"
+                                    onClick={() => handleTaskStatusUpdate(task.id, 'DONE')}
+                                    disabled={taskStatusMap[task.id] === 'loading'}
+                                  >
+                                    {taskStatusMap[task.id] === 'loading' ? 'Güncelleniyor...' : 'Tamamla'}
+                                  </button>
+                                  {taskStatusMap[task.id] === 'error' && (
+                                    <div className="text-xs text-red-500 mt-1">{taskStatusError[task.id]}</div>
+                                  )}
+                                  {taskStatusMap[task.id] === 'success' && (
+                                    <div className="text-xs text-green-500 mt-1">Durum: Tamamlandı!</div>
+                                  )}
+                                </Card>
+                              ) : null
+                            ))}
+                          </div>
+                        )}
+                        {/* NOTES_LISTED ise notları kart şeklinde göster */}
+                        {!message.isUser && message.type === 'NOTES_LISTED' && message.tasks && message.tasks.length > 0 && (
+                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {message.tasks.map(note => (
+                              'content' in note ? (
+                                <Card key={note.id} className="p-3 border border-accent-gold/40 bg-navy-light/10">
+                                  <div className="font-bold text-accent-gold mb-1">Not #{note.id}</div>
+                                  <div className="text-navy-light mb-1">{String(note.content)}</div>
+                                  
+                                </Card>
+                              ) : null
                             ))}
                           </div>
                         )}
                         {/* DUBLICATE_TASK türündeyse çift görevleri ve optimize sonucu yeni görevi göster */}
-                        {!message.isUser && message.type === 'DUBLICATE_TASK' && message.tasks && message.tasks.length > 0 && (
+                        {!message.isUser && message.type === 'DUPLICATE_TASK' && message.tasks && message.tasks.length > 0 && (
                           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                             {message.tasks.map(task => (
                               <Card key={task.id} className="p-3 border border-red-400 bg-navy-light/10">
@@ -294,7 +341,7 @@ export const ChatInterface = () => {
                                 <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>
                               </Card>
                             ))}
-                            {message.text === 'Do you want to remove these tasks with one?' && (
+                            {message.text === 'Bu görevler aynı eylemi temsil ediyor. Hepsini tek bir görev ile birleştirip eskilerini silelim mi?' && (
                               <div className="mt-2 flex gap-2 items-center">
                                 <button
                                   className="bg-accent-gold border border-navy-primary/20 rounded-full p-1 shadow flex items-center justify-center"
@@ -360,6 +407,31 @@ export const ChatInterface = () => {
                     />
                   </div>
                   <div className="flex gap-2 items-center">
+                    {/* Image upload for /prompt - leftmost icon */}
+                    <div className="flex items-center">
+                      <label htmlFor="chat-image-upload" className="cursor-pointer flex items-center justify-center mr-2">
+                        <ImageIcon className="w-6 h-6 text-accent-gold" />
+                      </label>
+                      <input
+                        id="chat-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            setSelectedImage(e.target.files[0]);
+                            setImagePreview(URL.createObjectURL(e.target.files[0]));
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                      {imagePreview && (
+                        <img
+                          src={imagePreview}
+                          alt="preview"
+                          className="w-8 h-8 object-cover rounded ml-2 border border-accent-gold"
+                        />
+                      )}
+                    </div>
                     {/* Promptu İyileştir butonu ve öneri solda */}
                     <div className="flex flex-col items-start justify-center mr-2">
                       {!improvedMap['input'] && (
