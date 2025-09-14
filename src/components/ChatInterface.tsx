@@ -3,6 +3,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { improvePrompt } from '@/store/promptSlice';
 import { actPrompt } from '@/store/promptActSlice';
 import { optimizeTask } from '@/store/optimizeTaskSlice';
+import { updateTaskStatus } from '@/store/updateTaskStatusSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -26,6 +27,12 @@ interface Message {
 import axios from 'axios';
 
 export const ChatInterface = () => {
+  // Task status update
+  const updateTaskStatusState = useAppSelector(state => state.updateTaskStatus);
+  const handleTaskStatusUpdate = async (taskId: number, status: 'DONE') => {
+    await dispatch(updateTaskStatus({ id: taskId, status }));
+    // Optionally, show feedback or update UI
+  };
   const { user } = useAppSelector(state => state.auth);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -259,6 +266,19 @@ export const ChatInterface = () => {
                                 <div className="text-navy-light mb-1">{task.description}</div>
                                 <div className="text-xs text-navy-light/60">Başlangıç: {new Date(task.startDate).toLocaleString()}</div>
                                 <div className="text-xs text-navy-light/60">Bitiş: {new Date(task.endDate).toLocaleString()}</div>
+                                <button
+                                  className="mt-2 px-3 py-1 rounded bg-accent-gold text-navy-dark font-semibold text-xs hover:bg-accent-gold/80 transition"
+                                  onClick={() => handleTaskStatusUpdate(task.id, 'DONE')}
+                                  disabled={updateTaskStatusState.loading}
+                                >
+                                  {updateTaskStatusState.loading ? 'Güncelleniyor...' : 'Tamamla'}
+                                </button>
+                                {updateTaskStatusState.error && (
+                                  <div className="text-xs text-red-500 mt-1">{updateTaskStatusState.error}</div>
+                                )}
+                                {updateTaskStatusState.success && (
+                                  <div className="text-xs text-green-500 mt-1">Durum: Tamamlandı!</div>
+                                )}
                               </Card>
                             ))}
                           </div>

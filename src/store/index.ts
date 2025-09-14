@@ -4,6 +4,7 @@ import promptReducer from './promptSlice';
 import promptActReducer from './promptActSlice';
 import optimizeTaskReducer from './optimizeTaskSlice';
 import dailySummaryReducer from './dailySummarySlice';
+import updateTaskStatusReducer from './updateTaskStatusSlice';
 
 const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
     promptAct: promptActReducer,
     optimizeTask: optimizeTaskReducer,
     dailySummary: dailySummaryReducer,
+    updateTaskStatus: updateTaskStatusReducer,
 
   },
 });
