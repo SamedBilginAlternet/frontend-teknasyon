@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/authSlice';
 import { DailySummary } from '@/components/DailySummary';
+import { fetchDailySummary } from '@/store/dailySummarySlice';
 import { ChatInterface } from '@/components/ChatInterface';
 import { Button } from '@/components/ui/button';
 import { User, LogOut, Settings, CheckSquare, FileText } from 'lucide-react';
@@ -17,12 +18,12 @@ interface Note {
 }
 
 const Index = () => {
-  const [notes] = useState<Note[]>([
-    { id: '1', content: 'Bugün toplantı notları al', timestamp: new Date(), isVoiceNote: false },
-    { id: '2', content: 'Proje planlaması yap', timestamp: new Date(), isVoiceNote: true },
-  ]);
-  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  // Daily summary fetch
   const dispatch = useAppDispatch();
+  useEffect(() => {
+    dispatch(fetchDailySummary());
+  }, [dispatch]);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const { token, user } = useAppSelector(state => state.auth);
   const navigate = useNavigate();
 
@@ -188,7 +189,7 @@ const Index = () => {
 
         {/* Content */}
         <div className="relative z-10 text-center space-y-2">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3 mt-10 mb-8">
             <img src={dragonIcon} alt="Dragon" className="h-10 w-10" />
             <h1 className="text-4xl font-bold text-accent-gold">ThroneMind</h1>
           </div>
@@ -212,7 +213,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-4 pb-24">
         {/* Daily Summary */}
-        <DailySummary notes={notes.map(n => n.content)} />
+        <DailySummary />
       </div>
 
       {/* Chat Interface - Fixed at bottom */}

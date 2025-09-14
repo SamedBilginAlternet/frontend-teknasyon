@@ -1,27 +1,41 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Crown, TrendingUp, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useAppSelector } from '@/store/hooks';
 
-interface DailySummaryProps {
-  notes: string[];
-}
+export const DailySummary: React.FC = () => {
+  const dailySummary = useAppSelector(state => state.dailySummary);
+  const {
+    productivityScore,
+    tasksDone,
+    focusTimeHours,
+    deadlines,
+    yesterdaysVictory,
+    todaysFocus,
+    aiRecommendations,
+    recentNotes,
+    loading,
+    error,
+    reignPercent,
+    date,
+  } = dailySummary;
 
-export const DailySummary: React.FC<DailySummaryProps> = ({ notes }) => {
-  // Mock AI-generated insights
-  const insights = {
-    productivity: 85,
-    tasksCompleted: 7,
-    totalFocusTime: 4.5,
-    upcomingDeadlines: 2,
-    keyFocus: "Sprint planning and code review",
-    yesterdayHighlight: "Successfully completed 3 major tasks ahead of schedule",
-    recommendations: [
-      "Consider batching similar tasks to improve efficiency",
-      "Schedule a 15-minute break every hour for optimal focus"
-    ]
-  };
-
+  if (loading) {
+    return (
+      <Card className="p-6 bg-gradient-shadow border-throne-gold/20 text-center">
+        <span className="text-throne-gold">Yükleniyor...</span>
+      </Card>
+    );
+  }
+  if (error) {
+    return (
+      <Card className="p-6 bg-gradient-shadow border-throne-gold/20 text-center">
+        <span className="text-red-500">{error}</span>
+      </Card>
+    );
+  }
   return (
     <Card className="p-6 bg-gradient-shadow border-throne-gold/20">
       <div className="space-y-6">
@@ -31,53 +45,47 @@ export const DailySummary: React.FC<DailySummaryProps> = ({ notes }) => {
             Daily AI Summary
           </h2>
           <Badge variant="outline" className="border-throne-gold text-throne-gold">
-            Today's Reign
+            Today's Reign: {reignPercent}%
           </Badge>
         </div>
-
+        <div className="text-xs text-muted-foreground mb-2">{date}</div>
         {/* Productivity Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-3 rounded-lg bg-throne-charcoal/50 border border-throne-gold/20">
             <TrendingUp className="h-5 w-5 text-throne-gold mx-auto mb-1" />
-            <div className="text-lg font-semibold text-throne-gold">{insights.productivity}%</div>
+            <div className="text-lg font-semibold text-throne-gold">{productivityScore}%</div>
             <div className="text-xs text-muted-foreground">Productivity</div>
           </div>
-          
           <div className="text-center p-3 rounded-lg bg-throne-charcoal/50 border border-throne-gold/20">
             <CheckCircle className="h-5 w-5 text-dragon-fire mx-auto mb-1" />
-            <div className="text-lg font-semibold text-dragon-fire">{insights.tasksCompleted}</div>
+            <div className="text-lg font-semibold text-dragon-fire">{tasksDone}</div>
             <div className="text-xs text-muted-foreground">Tasks Done</div>
           </div>
-          
           <div className="text-center p-3 rounded-lg bg-throne-charcoal/50 border border-throne-gold/20">
             <Clock className="h-5 w-5 text-winter-blue mx-auto mb-1" />
-            <div className="text-lg font-semibold text-winter-blue">{insights.totalFocusTime}h</div>
+            <div className="text-lg font-semibold text-winter-blue">{focusTimeHours}h</div>
             <div className="text-xs text-muted-foreground">Focus Time</div>
           </div>
-          
           <div className="text-center p-3 rounded-lg bg-throne-charcoal/50 border border-throne-gold/20">
             <AlertTriangle className="h-5 w-5 text-dragon-fire mx-auto mb-1" />
-            <div className="text-lg font-semibold text-dragon-fire">{insights.upcomingDeadlines}</div>
+            <div className="text-lg font-semibold text-dragon-fire">{deadlines}</div>
             <div className="text-xs text-muted-foreground">Deadlines</div>
           </div>
         </div>
-
         {/* AI Insights */}
         <div className="space-y-4">
           <div className="p-4 rounded-lg bg-throne-charcoal/30 border border-throne-gold/10">
             <h4 className="font-semibold text-throne-gold mb-2">🏆 Yesterday's Victory</h4>
-            <p className="text-sm text-foreground">{insights.yesterdayHighlight}</p>
+            <p className="text-sm text-foreground">{yesterdaysVictory}</p>
           </div>
-          
           <div className="p-4 rounded-lg bg-throne-charcoal/30 border border-throne-gold/10">
             <h4 className="font-semibold text-throne-gold mb-2">🎯 Today's Focus</h4>
-            <p className="text-sm text-foreground">{insights.keyFocus}</p>
+            <p className="text-sm text-foreground">{todaysFocus}</p>
           </div>
-          
           <div className="p-4 rounded-lg bg-throne-charcoal/30 border border-throne-gold/10">
             <h4 className="font-semibold text-throne-gold mb-2">💡 AI Recommendations</h4>
             <ul className="space-y-1">
-              {insights.recommendations.map((rec, index) => (
+              {aiRecommendations.map((rec, index) => (
                 <li key={index} className="text-sm text-foreground flex items-start gap-2">
                   <span className="text-throne-gold">•</span>
                   {rec}
@@ -86,20 +94,19 @@ export const DailySummary: React.FC<DailySummaryProps> = ({ notes }) => {
             </ul>
           </div>
         </div>
-
         {/* Notes Summary */}
-        {notes.length > 0 && (
+        {recentNotes.length > 0 && (
           <div className="p-4 rounded-lg bg-throne-charcoal/30 border border-throne-gold/10">
-            <h4 className="font-semibold text-throne-gold mb-2">📝 Recent Notes ({notes.length})</h4>
+            <h4 className="font-semibold text-throne-gold mb-2">📝 Recent Notes ({recentNotes.length})</h4>
             <div className="space-y-2">
-              {notes.slice(0, 3).map((note, index) => (
-                <p key={index} className="text-sm text-foreground line-clamp-2">
-                  {note}
+              {recentNotes.slice(0, 3).map((note, index) => (
+                <p key={note.id} className="text-sm text-foreground line-clamp-2">
+                  {note.content}
                 </p>
               ))}
-              {notes.length > 3 && (
+              {recentNotes.length > 3 && (
                 <p className="text-xs text-muted-foreground">
-                  +{notes.length - 3} more notes...
+                  +{recentNotes.length - 3} more notes...
                 </p>
               )}
             </div>

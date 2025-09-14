@@ -245,7 +245,11 @@ export const ChatInterface = () => {
                           </div>
                         )}
                              
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                          {message.type === 'ROUTINE_TASK' ? (
+                            <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
+                          ) : (
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                          )}
                         {/* TASKS_LISTED ise görevleri kart şeklinde göster */}
                         {!message.isUser && message.type === 'TASKS_LISTED' && message.tasks && message.tasks.length > 0 && (
                           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
